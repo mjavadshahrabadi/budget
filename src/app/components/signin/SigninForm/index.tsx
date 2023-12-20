@@ -7,13 +7,13 @@ import { UserPlusIcon, FingerPrintIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 interface ISigninValues {
-    nationalCode: string;
+    email: string;
     password: string;
 }
 
 const schema = Yup.object().shape({
-    nationalCode: Yup.string().length(10, 'کد ملی وارد شده صحیح نمی باشد.').required('کد ملی الزامی می باشد.'),
-    password: Yup.string().min(8).required('رمز عبور الزامی می باشد.'),
+    email: Yup.string().email().required(),
+    password: Yup.string().min(8).required(),
 });
 
 export const SigninForm: FC = (): ReactElement => {
@@ -24,7 +24,7 @@ export const SigninForm: FC = (): ReactElement => {
     } = useForm<ISigninValues>({
         resolver: yupResolver(schema),
         defaultValues: {
-            nationalCode: '',
+            email: '',
             password: '',
         },
         mode: 'all',
@@ -44,13 +44,12 @@ export const SigninForm: FC = (): ReactElement => {
             </div>
             <div>
                 <Input
-                    label="کد ملی"
+                    label="ایمیل"
                     size="md"
-                    type="text"
+                    type="email"
                     required
-                    maxLength={10}
-                    color={errors.nationalCode ? 'danger' : dirtyFields.nationalCode ? 'success' : 'default'}
-                    {...register('nationalCode')}
+                    color={errors.email ? 'danger' : dirtyFields.email ? 'success' : 'default'}
+                    {...register('email')}
                 />
             </div>
             <div>

@@ -9,14 +9,12 @@ import Link from 'next/link';
 interface ISigninValues {
     fullName: string;
     email: string;
-    nationalCode: string;
     password: string;
     confirmPassword: string;
 }
 
 const schema = Yup.object().shape({
     fullName: Yup.string().min(5).max(50).required(),
-    nationalCode: Yup.string().length(10).required(),
     email: Yup.string().email().required(),
     password: Yup.string().min(8).required(),
     confirmPassword: Yup.string()
@@ -32,7 +30,6 @@ export const SignupForm: FC = (): ReactElement => {
     } = useForm<ISigninValues>({
         resolver: yupResolver(schema),
         defaultValues: {
-            nationalCode: '',
             password: '',
             confirmPassword: '',
             email: '',
@@ -62,17 +59,6 @@ export const SignupForm: FC = (): ReactElement => {
                     maxLength={50}
                     color={errors.fullName ? 'danger' : dirtyFields.fullName ? 'success' : 'default'}
                     {...register('fullName')}
-                />
-            </div>
-            <div>
-                <Input
-                    label="کد ملی"
-                    size="md"
-                    type="text"
-                    required
-                    maxLength={10}
-                    color={errors.nationalCode ? 'danger' : dirtyFields.nationalCode ? 'success' : 'default'}
-                    {...register('nationalCode')}
                 />
             </div>
             <div>
