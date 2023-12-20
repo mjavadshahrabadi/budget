@@ -3,6 +3,8 @@ import { Input, Button } from '@nextui-org/react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import UserPlus from '@heroicons/react/24/outline/UserPlusIcon';
+import Link from 'next/link';
 
 interface ISigninValues {
     nationalCode: string;
@@ -53,12 +55,17 @@ export const SigninForm: FC = (): ReactElement => {
                     type="password"
                     required
                     color={errors.password ? 'danger' : dirtyFields.password ? 'success' : 'default'}
+                    maxLength={20}
                     {...register('password')}
                 />
             </div>
             <Button color="primary" type="submit">
                 ورود
             </Button>
+            <Link className="flex items-center gap-x-1 cursor-pointer w-fit" href="/signup">
+                <UserPlus className="x-7 h-5 text-[#0070f0]" />
+                <span className="text-sm text-[#0070f0]">ایجاد حساب کاربری</span>
+            </Link>
         </form>
     );
 };
