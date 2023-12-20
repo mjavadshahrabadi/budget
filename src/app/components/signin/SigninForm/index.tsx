@@ -3,7 +3,7 @@ import { Input, Button } from '@nextui-org/react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import UserPlus from '@heroicons/react/24/outline/UserPlusIcon';
+import { UserPlusIcon, FingerPrintIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 interface ISigninValues {
@@ -36,7 +36,12 @@ export const SigninForm: FC = (): ReactElement => {
 
     return (
         <form className="flex flex-col space-y-4 w-1/3" dir="rtl" onSubmit={handleSubmit(onFormSubmitAction)}>
-            <h1>ورود به حساب کاربری</h1>
+            <div className="text-gray-700 flex items-center gap-x-1">
+                <i>
+                    <FingerPrintIcon className="w-5 h-5" />
+                </i>
+                <h1>ورود به حساب کاربری</h1>
+            </div>
             <div>
                 <Input
                     label="کد ملی"
@@ -63,7 +68,7 @@ export const SigninForm: FC = (): ReactElement => {
                 ورود
             </Button>
             <Link className="flex items-center gap-x-1 cursor-pointer w-fit" href="/signup">
-                <UserPlus className="x-7 h-5 text-[#0070f0]" />
+                <UserPlusIcon className="w-5 h-5 text-[#0070f0]" />
                 <span className="text-sm text-[#0070f0]">ایجاد حساب کاربری</span>
             </Link>
         </form>

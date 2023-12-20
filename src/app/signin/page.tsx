@@ -2,7 +2,7 @@
 
 import React, { ReactElement } from 'react';
 import Image from 'next/image';
-import { SigninForm } from '../components/signin/Signin/SigninForm';
+import { SigninForm } from '../components/signin/SigninForm';
 
 export default function Page(): ReactElement {
     return (
