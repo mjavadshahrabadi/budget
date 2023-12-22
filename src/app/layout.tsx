@@ -3,6 +3,7 @@ import { Providers } from './providers';
 import './globals.css';
 
 import localFont from 'next/font/local';
+import { Toaster } from 'react-hot-toast';
 const myFont = localFont({ src: './assets/fonts/yekan.woff2' });
 
 export const metadata: Metadata = {
@@ -12,8 +13,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="fa" className={`${myFont.className} bg-gray-100`}>
+        <html lang="fa" className={`${myFont.className} bg-gray-200`}>
             <body>
+                <Toaster position="bottom-left" gutter={10} containerClassName="text-sm" />
                 <Providers>{children}</Providers>
             </body>
         </html>
