@@ -8,53 +8,45 @@ import {
     TableCell,
     Tooltip,
     useDisclosure,
-    Chip,
 } from '@nextui-org/react';
-import { ICartRow } from '@/src/app/components/dashboard/cart/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { DeleteConfirmModal } from '@/src/app/components/common/DeleteConfirmModal';
-import { UpsertCartModal } from '@/src/app/components/dashboard/cart/UpsertCartModal';
+import { ITransactionRow } from '@/src/app/components/dashboard/transaction/types';
+import { UpsertTransactionModal } from '@/src/app/components/dashboard/transaction/UpsertTransactionModal';
 
 const columns: { name: string; uid: string }[] = [
     { name: 'ویرایش', uid: 'actions' },
-    { name: 'محدودیت کارت به تومان', uid: 'limitation' },
-    { name: 'موجودی کارت به تومان', uid: 'balance' },
-    { name: 'تاریخ انقضا', uid: 'expireDate' },
-    { name: 'CVV2', uid: 'cvv2' },
+    { name: 'توضیحات', uid: 'description' },
+    { name: 'تاریخ', uid: 'date' },
+    { name: 'نوع تراکنش', uid: 'type' },
+    { name: 'مبلغ به تومان', uid: 'amount' },
     { name: 'شماره کارت', uid: 'creditCartNumber' },
 ];
 
 interface ICartTableProps {
-    carts: ICartRow[];
+    transactions: ITransactionRow[];
 }
 
-export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
-    const { carts } = props;
+export const TransactionTable: FC<ICartTableProps> = (props): ReactElement => {
+    const { transactions } = props;
     const { isOpen: isDeleteOpen, onClose: onDeleteClose, onOpen: onDeleteOpen } = useDisclosure();
-    const [selectedRow, setSelectedRow] = useState<ICartRow>();
+    const [selectedRow, setSelectedRow] = useState<ITransactionRow>();
     const { isOpen: isEditOpen, onClose: onEditClose, onOpen: onEditOpen } = useDisclosure();
 
-    const renderCell = useCallback((cart: ICartRow, columnKey: keyof ICartRow) => {
-        const cellValue = cart[columnKey];
+    const renderCell = useCallback((transaction: ITransactionRow, columnKey: keyof ITransactionRow) => {
+        const cellValue = transaction[columnKey];
+
         switch (columnKey) {
             case 'creditCartNumber':
-                return <span className="text-[13px]">{cart.creditCartNumber}</span>;
-            case 'cvv2':
-                return <span className="text-[13px]">{cart.cvv2 ?? ''}</span>;
-            case 'expireDate':
-                return <span className="text-[13px]">{cart.expireDate ?? ''}</span>;
-            case 'limitation':
-                return (
-                    <Chip size="sm" className="bg-red-100 text-red-600">
-                        {cart.limitation ?? ''}
-                    </Chip>
-                );
-            case 'balance':
-                return (
-                    <Chip size="sm" className="bg-green-100 text-green-600 font-semibold">
-                        {cart.balance ?? ''}
-                    </Chip>
-                );
+                return <span className="text-[13px]">{transaction.creditCartNumber}</span>;
+            case 'amount':
+                return <span className="text-[13px]">{transaction.amount ?? ''}</span>;
+            case 'type':
+                return <span className="text-[13px]">{transaction.type ?? ''}</span>;
+            case 'date':
+                return <span className="text-[13px]">{transaction.date ?? ''}</span>;
+            case 'description':
+                return <span className="text-[13px]">{transaction.description ?? ''}</span>;
             case 'actions':
                 return (
                     <div className="flex items-center justify-center gap-2">
@@ -63,7 +55,7 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
                                 <PencilIcon
                                     className="w-5 h-5 cursor-pointer text-gray-500"
                                     onClick={() => {
-                                        setSelectedRow(cart);
+                                        setSelectedRow(transaction);
                                         onEditOpen();
                                     }}
                                 />
@@ -73,7 +65,7 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
                             <span
                                 className="rounded-md"
                                 onClick={() => {
-                                    setSelectedRow(cart);
+                                    setSelectedRow(transaction);
                                     onDeleteOpen();
                                 }}
                             >
@@ -88,8 +80,14 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
     }, []);
     return (
         <Fragment>
-            <DeleteConfirmModal title="حذف کارت" isOpen={isDeleteOpen} onClose={onDeleteClose} onDelete={() => {}} />
-            <UpsertCartModal isOpen={isEditOpen} onClose={onEditClose} edit={true} editFormData={selectedRow} />
+            <DeleteConfirmModal title="حذف تراکنش" isOpen={isDeleteOpen} onClose={onDeleteClose} onDelete={() => {}} />
+            <UpsertTransactionModal
+                isOpen={isEditOpen}
+                onClose={onEditClose}
+                edit={true}
+                editFormData={selectedRow}
+                creditCarts={[]}
+            />
             <Table aria-label="Example table with custom cells">
                 <TableHeader columns={columns}>
                     {(column) => (
@@ -98,12 +96,12 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
                         </TableColumn>
                     )}
                 </TableHeader>
-                <TableBody items={carts}>
+                <TableBody items={transactions}>
                     {(item) => (
-                        <TableRow key={item.id}>
+                        <TableRow key={item.transactionId}>
                             {(columnKey) => (
                                 <TableCell className="text-center">
-                                    {renderCell(item, columnKey as keyof ICartRow)}
+                                    {renderCell(item, columnKey as keyof ITransactionRow)}
                                 </TableCell>
                             )}
                         </TableRow>
