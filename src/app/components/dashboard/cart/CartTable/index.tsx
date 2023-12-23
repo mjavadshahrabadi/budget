@@ -1,4 +1,4 @@
-import { FC, ReactElement, useCallback } from 'react';
+import { FC, Fragment, ReactElement, useCallback, useState } from 'react';
 import {
     Table,
     TableHeader,
@@ -6,12 +6,13 @@ import {
     TableBody,
     TableRow,
     TableCell,
-    User,
-    Chip,
     Tooltip,
-    getKeyValue,
+    useDisclosure,
 } from '@nextui-org/react';
 import { ICartRow } from '@/src/app/components/dashboard/cart/types';
+import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { DeleteConfirmModal } from '@/src/app/components/common/DeleteConfirmModal';
+import { UpsertCartModal } from '@/src/app/components/dashboard/cart/UpsertCartModal';
 
 const columns: { name: string; uid: string }[] = [
     { name: 'ویرایش', uid: 'actions' },
@@ -26,26 +27,17 @@ interface ICartTableProps {
     carts: ICartRow[];
 }
 
-interface ICartSignature {
-    [key: string]: string | number;
-}
 export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
     const { carts } = props;
-    const renderCell = useCallback((cart: ICartRow, columnKey: string) => {
-        const cellValue = cart[columnKey] as number | string;
+    const { isOpen: isDeleteOpen, onClose: onDeleteClose, onOpen: onDeleteOpen } = useDisclosure();
+    const [selectedRow, setSelectedRow] = useState<ICartRow>();
+    const { isOpen: isEditOpen, onClose: onEditClose, onOpen: onEditOpen } = useDisclosure();
+
+    const renderCell = useCallback((cart: ICartRow, columnKey: keyof ICartRow) => {
+        const cellValue = cart[columnKey];
         switch (columnKey) {
             case 'creditCartNumber':
-                return (
-                    <span>
-                        {cart.creditCartNumber.slice(0, 4) +
-                            '-' +
-                            cart.creditCartNumber.slice(4, 8) +
-                            '-' +
-                            cart.creditCartNumber.slice(8, 12) +
-                            '-' +
-                            cart.creditCartNumber.slice(12, 16) ?? ''}
-                    </span>
-                );
+                return <span>{cart.creditCartNumber}</span>;
             case 'cvv2':
                 return <span>{cart.cvv2 ?? ''}</span>;
             case 'expireDate':
@@ -55,47 +47,60 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
             case 'limitation':
                 return <span>{cart.limitation ?? ''}</span>;
             case 'actions':
-                return <span>actions</span>;
-            // case 'actions':
-            //     return (
-            //         <div className="relative flex items-center gap-2">
-            //             <Tooltip content="Details">
-            //                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-            //                     <EyeIcon />
-            //                 </span>
-            //             </Tooltip>
-            //             <Tooltip content="Edit user">
-            //                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-            //                     <EditIcon />
-            //                 </span>
-            //             </Tooltip>
-            //             <Tooltip color="danger" content="Delete user">
-            //                 <span className="text-lg text-danger cursor-pointer active:opacity-50">
-            //                     <DeleteIcon />
-            //                 </span>
-            //             </Tooltip>
-            //         </div>
-            //     );
+                return (
+                    <div className="flex items-center justify-center gap-2">
+                        <Tooltip content="ویرایش">
+                            <span className="bg-gray-100 p-1 rounded-md">
+                                <PencilIcon
+                                    className="w-5 h-5 cursor-pointer text-gray-500"
+                                    onClick={() => {
+                                        setSelectedRow(cart);
+                                        onEditOpen();
+                                    }}
+                                />
+                            </span>
+                        </Tooltip>
+                        <Tooltip content="حذف">
+                            <span
+                                className="bg-red-100 p-1 rounded-md"
+                                onClick={() => {
+                                    setSelectedRow(cart);
+                                    onDeleteOpen();
+                                }}
+                            >
+                                <TrashIcon className="w-5 h-5 cursor-pointer text-red-500" />
+                            </span>
+                        </Tooltip>
+                    </div>
+                );
             default:
                 return cellValue ?? '';
         }
     }, []);
     return (
-        <Table aria-label="Example table with custom cells">
-            <TableHeader columns={columns}>
-                {(column) => (
-                    <TableColumn key={column.uid} align="center" className="text-center">
-                        {column.name}
-                    </TableColumn>
-                )}
-            </TableHeader>
-            <TableBody items={carts}>
-                {(item) => (
-                    <TableRow key={item.id}>
-                        {(columnKey) => <TableCell className="text-center">{renderCell(item, columnKey)}</TableCell>}
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table>
+        <Fragment>
+            <DeleteConfirmModal title="حذف کارت" isOpen={isDeleteOpen} onClose={onDeleteClose} onDelete={() => {}} />
+            <UpsertCartModal isOpen={isEditOpen} onClose={onEditClose} edit={true} editFormData={selectedRow} />
+            <Table aria-label="Example table with custom cells">
+                <TableHeader columns={columns}>
+                    {(column) => (
+                        <TableColumn key={column.uid} align="center" className="text-center">
+                            {column.name}
+                        </TableColumn>
+                    )}
+                </TableHeader>
+                <TableBody items={carts}>
+                    {(item) => (
+                        <TableRow key={item.id}>
+                            {(columnKey) => (
+                                <TableCell className="text-center">
+                                    {renderCell(item, columnKey as keyof ICartRow)}
+                                </TableCell>
+                            )}
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </Fragment>
     );
 };

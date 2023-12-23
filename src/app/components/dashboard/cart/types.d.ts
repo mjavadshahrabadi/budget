@@ -5,4 +5,5 @@ export interface ICartRow {
     expireDate: string;
     limitation: number;
     balance: number;
+    actions: boolean;
 }
