@@ -28,7 +28,7 @@ export default function Page() {
                         date: '2023-04-01',
                         amount: 12000,
                         actions: true,
-                        type: 'input',
+                        type: 'ورودی',
                         creditCartNumber: '123321123321123321',
                     },
                     {
@@ -37,7 +37,7 @@ export default function Page() {
                         date: '2021-03-12',
                         amount: 50000,
                         actions: true,
-                        type: 'output',
+                        type: 'خروجی',
                         creditCartNumber: '123321123321123321',
                     },
                 ]}

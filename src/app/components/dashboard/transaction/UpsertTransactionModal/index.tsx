@@ -34,7 +34,7 @@ interface IFormValues {
 }
 
 const schema = Yup.object().shape({
-    type: Yup.string().required().oneOf(['input', 'output']),
+    type: Yup.string().required().oneOf(['ورودی', 'خروجی']),
     date: Yup.string().required(),
     amount: Yup.number().positive().required(),
     description: Yup.string().min(5).max(2000).required(),
@@ -50,7 +50,6 @@ export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props):
         watch,
         formState: { errors },
         setValue,
-        getValues,
     } = useForm<IFormValues>({
         resolver: yupResolver(schema),
         defaultValues: {
@@ -104,10 +103,10 @@ export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props):
                                     label="نوع تراکنش"
                                     className="min-w-full"
                                     isInvalid={!!errors.type}
-                                    defaultSelectedKey={editFormData?.type ? editFormData.type : 'input'}
+                                    defaultSelectedKey={editFormData?.type ? editFormData.type : 'خروجی'}
                                     items={[
-                                        { value: 'input', label: 'input' },
-                                        { value: 'output', label: 'output' },
+                                        { value: 'ورودی', label: 'ورودی' },
+                                        { value: 'خروجی', label: 'خروجی' },
                                     ]}
                                     {...register('type')}
                                     scrollShadowProps={{ isEnabled: false }}
