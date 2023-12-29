@@ -14,6 +14,8 @@ import { ICartRow } from '@/src/app/components/dashboard/cart/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { DeleteConfirmModal } from '@/src/app/components/common/DeleteConfirmModal';
 import { UpsertCartModal } from '@/src/app/components/dashboard/cart/UpsertCartModal';
+import API from '@/src/app/utils/API';
+import toast from 'react-hot-toast';
 
 const columns: { name: string; uid: string }[] = [
     { name: 'ویرایش', uid: 'actions' },
@@ -21,24 +23,40 @@ const columns: { name: string; uid: string }[] = [
     { name: 'موجودی کارت به تومان', uid: 'balance' },
     { name: 'تاریخ انقضا', uid: 'expireDate' },
     { name: 'CVV2', uid: 'cvv2' },
-    { name: 'شماره کارت', uid: 'creditCartNumber' },
+    { name: 'شماره کارت', uid: 'creditCardNumber' },
 ];
 
 interface ICartTableProps {
     carts: ICartRow[];
+    getAllCarts: () => void;
 }
 
 export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
-    const { carts } = props;
+    const { carts, getAllCarts } = props;
     const { isOpen: isDeleteOpen, onClose: onDeleteClose, onOpen: onDeleteOpen } = useDisclosure();
     const [selectedRow, setSelectedRow] = useState<ICartRow>();
     const { isOpen: isEditOpen, onClose: onEditClose, onOpen: onEditOpen } = useDisclosure();
 
+    const onDeleteHandler = async () => {
+        try {
+            const response = await API.post('/account/cart/delete-cart', { cartId: selectedRow?.id });
+            const result = response.data;
+            if (result.success && result.data) {
+                getAllCarts();
+                onDeleteClose();
+                toast.success('کارت با موفقیت حدف شد');
+            }
+        } catch (error) {
+            onDeleteClose();
+            toast.error('حذف کارت با خطا مواجه شد');
+        }
+    };
+
     const renderCell = useCallback((cart: ICartRow, columnKey: keyof ICartRow) => {
         const cellValue = cart[columnKey];
         switch (columnKey) {
-            case 'creditCartNumber':
-                return <span className="text-[13px]">{cart.creditCartNumber}</span>;
+            case 'creditCardNumber':
+                return <span className="text-[13px]">{cart.creditCardNumber}</span>;
             case 'cvv2':
                 return <span className="text-[13px]">{cart.cvv2 ?? ''}</span>;
             case 'expireDate':
@@ -88,8 +106,19 @@ export const CartTable: FC<ICartTableProps> = (props): ReactElement => {
     }, []);
     return (
         <Fragment>
-            <DeleteConfirmModal title="حذف کارت" isOpen={isDeleteOpen} onClose={onDeleteClose} onDelete={() => {}} />
-            <UpsertCartModal isOpen={isEditOpen} onClose={onEditClose} edit={true} editFormData={selectedRow} />
+            <DeleteConfirmModal
+                title="حذف کارت"
+                isOpen={isDeleteOpen}
+                onClose={onDeleteClose}
+                onDelete={onDeleteHandler}
+            />
+            <UpsertCartModal
+                isOpen={isEditOpen}
+                onClose={onEditClose}
+                edit={true}
+                editFormData={selectedRow}
+                getAllCarts={getAllCarts}
+            />
             <Table aria-label="Example table with custom cells">
                 <TableHeader columns={columns}>
                     {(column) => (

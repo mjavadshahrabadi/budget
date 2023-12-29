@@ -4,16 +4,19 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ICartRow } from '@/src/app/components/dashboard/cart/types';
+import API from '@/src/app/utils/API';
+import toast from 'react-hot-toast';
 
 interface IAddNewCartModal {
     edit?: boolean;
     editFormData?: ICartRow;
     isOpen: boolean;
     onClose: () => void;
+    getAllCarts: () => void;
 }
 
 interface IFormValues {
-    creditCartNumber: string;
+    creditCardNumber: string;
     cvv2: number;
     expireDate: string;
     limitation?: number;
@@ -21,7 +24,7 @@ interface IFormValues {
 }
 
 const schema = Yup.object().shape({
-    creditCartNumber: Yup.string().length(16).required(),
+    creditCardNumber: Yup.string().length(16).required(),
     cvv2: Yup.number()
         .required()
         .required()
@@ -38,13 +41,14 @@ const schema = Yup.object().shape({
 });
 
 export const UpsertCartModal: FC<IAddNewCartModal> = (props): ReactElement => {
-    const { onClose, isOpen, edit = false, editFormData } = props;
+    const { onClose, isOpen, edit = false, editFormData, getAllCarts } = props;
 
     const {
         register,
         handleSubmit,
         watch,
         formState: { errors },
+        reset,
         setValue,
     } = useForm<IFormValues>({
         resolver: yupResolver(schema),
@@ -53,19 +57,35 @@ export const UpsertCartModal: FC<IAddNewCartModal> = (props): ReactElement => {
             cvv2: 0,
             limitation: 0,
             expireDate: new Date().toISOString().slice(0, 10),
-            creditCartNumber: '',
+            creditCardNumber: '',
         },
         mode: 'all',
     });
 
-    const onFormSubmitHandler: SubmitHandler<IFormValues> = (data) => {
-        console.log('data:', data);
+    const onFormSubmitHandler: SubmitHandler<IFormValues> = async (data) => {
+        try {
+            const response = await API.put(
+                edit ? 'account/cart/update-cart' : 'account/cart/add-cart',
+                edit ? { ...data, cartId: editFormData?.id } : data,
+            );
+            const result = response.data;
+            if (result.success && result.data) {
+                onClose();
+                toast.success(`کارت بانکی با موفقیت ${edit ? 'ویرایش' : 'اضافه'} شد`);
+                getAllCarts();
+                reset();
+            }
+        } catch (error) {
+            onClose();
+            reset();
+            toast.error('افزودن کارت بانکی با خطا مواجه شد');
+        }
     };
 
     useEffect(() => {
         console.warn(editFormData);
         if (editFormData && edit) {
-            setValue('creditCartNumber', editFormData.creditCartNumber);
+            setValue('creditCardNumber', editFormData.creditCardNumber);
             setValue('cvv2', editFormData.cvv2);
             setValue('expireDate', editFormData.expireDate);
             setValue('balance', editFormData.balance);
@@ -86,11 +106,11 @@ export const UpsertCartModal: FC<IAddNewCartModal> = (props): ReactElement => {
                                 <Input
                                     label="شماره کارت بانکی"
                                     isRequired
-                                    value={watch('creditCartNumber')}
+                                    value={watch('creditCardNumber')}
                                     type="text"
                                     maxLength={16}
-                                    {...register('creditCartNumber')}
-                                    isInvalid={!!errors.creditCartNumber}
+                                    {...register('creditCardNumber')}
+                                    isInvalid={!!errors.creditCardNumber}
                                 />
                                 <Input
                                     label="cvv2"

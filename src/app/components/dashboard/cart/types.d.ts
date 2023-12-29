@@ -1,6 +1,6 @@
 export interface ICartRow {
     id: number;
-    creditCartNumber: string;
+    creditCardNumber: string;
     cvv2: number;
     expireDate: string;
     limitation: number;
