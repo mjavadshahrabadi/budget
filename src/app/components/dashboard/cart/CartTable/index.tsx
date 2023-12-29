@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, Fragment, ReactElement, useCallback, useState } from 'react';
 import {
     Table,

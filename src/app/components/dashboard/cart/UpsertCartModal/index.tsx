@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, ReactElement, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from '@nextui-org/react';
 import { useForm, SubmitHandler } from 'react-hook-form';

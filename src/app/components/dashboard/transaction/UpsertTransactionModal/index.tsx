@@ -1,4 +1,5 @@
-import { FC, ReactElement, useEffect } from 'react';
+'use client';
+import { FC, ReactElement } from 'react';
 import {
     Modal,
     ModalContent,
@@ -14,20 +15,20 @@ import {
 import { useForm, SubmitHandler } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { ITransactionRow } from '@/src/app/components/dashboard/transaction/types';
 import { ICartRow } from '@/src/app/components/dashboard/cart/types';
+import toast from 'react-hot-toast';
+import API from '@/src/app/utils/API';
 
 interface IUpsertTransactionModalProps {
-    edit?: boolean;
-    editFormData?: ITransactionRow;
     isOpen: boolean;
     onClose: () => void;
     creditCarts: ICartRow[];
+    getAllTransaction: () => void;
 }
 
 interface IFormValues {
     type: string;
-    creditCartNumber: string;
+    creditCardNumber: string;
     date: string;
     amount: number;
     description: string;
@@ -36,43 +37,52 @@ interface IFormValues {
 const schema = Yup.object().shape({
     type: Yup.string().required().oneOf(['ورودی', 'خروجی']),
     date: Yup.string().required(),
-    amount: Yup.number().positive().required(),
+    amount: Yup.number()
+        .positive()
+        .required()
+        .test('value', 'value', (value) => value > 0),
     description: Yup.string().min(5).max(2000).required(),
-    creditCartNumber: Yup.string().required(),
+    creditCardNumber: Yup.string().required(),
 });
 
 export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props): ReactElement => {
-    const { onClose, isOpen, edit = false, editFormData, creditCarts = [] } = props;
+    const { onClose, isOpen, creditCarts = [], getAllTransaction = () => {} } = props;
 
     const {
         register,
         handleSubmit,
         watch,
         formState: { errors },
-        setValue,
     } = useForm<IFormValues>({
         resolver: yupResolver(schema),
         defaultValues: {
             amount: 0,
-            type: 'input',
+            type: 'خروجی',
             date: new Date().toISOString().slice(0, 10),
         },
         mode: 'all',
     });
 
-    const onFormSubmitHandler: SubmitHandler<IFormValues> = (data) => {
-        console.log('data:', data);
-    };
-
-    useEffect(() => {
-        if (editFormData && edit) {
-            setValue('creditCartNumber', editFormData.creditCartNumber);
-            setValue('amount', editFormData.amount);
-            setValue('type', editFormData.type);
-            setValue('date', editFormData.date);
-            setValue('description', editFormData.description);
+    const onFormSubmitHandler: SubmitHandler<IFormValues> = async (data) => {
+        const cart = creditCarts.find((cart) => cart.creditCardNumber === data['creditCardNumber']);
+        if (cart) {
+            try {
+                const response = await API.post('account/transaction/add', {
+                    ...data,
+                    type: data['type'] === 'ورودی' ? 0 : 1,
+                    cartId: cart.id,
+                });
+                const result = response.data;
+                if (result.success && result.data) {
+                    getAllTransaction();
+                    onClose();
+                    toast.success('تراکنش با موفقیت اضافه شد');
+                }
+            } catch (error) {
+                toast.error('اضافه کردن تراکنش با خطا مواجه شد');
+            }
         }
-    }, [editFormData, edit]);
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -80,20 +90,18 @@ export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props):
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1 text-[14px]">
-                                {edit ? 'ویرایش' : 'افزودن'} تراکنش
-                            </ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1 text-[14px]">افزودن تراکنش جدید</ModalHeader>
                             <ModalBody dir="rtl" className="flex flex-col space-y-4">
                                 <Autocomplete
                                     isRequired
-                                    defaultSelectedKey={
-                                        editFormData?.creditCartNumber && editFormData?.creditCartNumber
-                                    }
                                     label="انتخاب کارت بانکی"
                                     className="min-w-full"
-                                    isInvalid={!!errors.creditCartNumber}
-                                    defaultItems={[{ label: '123321123321123321', value: '123321123321123321' }]}
-                                    {...register('creditCartNumber')}
+                                    isInvalid={!!errors.creditCardNumber}
+                                    defaultItems={creditCarts.map((cart) => ({
+                                        label: cart.creditCardNumber,
+                                        value: cart.creditCardNumber,
+                                    }))}
+                                    {...register('creditCardNumber')}
                                     scrollShadowProps={{ isEnabled: false }}
                                 >
                                     {(item) => <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>}
@@ -103,7 +111,7 @@ export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props):
                                     label="نوع تراکنش"
                                     className="min-w-full"
                                     isInvalid={!!errors.type}
-                                    defaultSelectedKey={editFormData?.type ? editFormData.type : 'خروجی'}
+                                    defaultSelectedKey={'خروجی'}
                                     items={[
                                         { value: 'ورودی', label: 'ورودی' },
                                         { value: 'خروجی', label: 'خروجی' },
@@ -142,7 +150,7 @@ export const UpsertTransactionModal: FC<IUpsertTransactionModalProps> = (props):
                             </ModalBody>
                             <ModalFooter>
                                 <Button className="bg-indigo-500 text-white" type="submit">
-                                    {edit ? 'ویرایش' : 'ثبت'}
+                                    ثبت
                                 </Button>
                                 <Button className="text-gray-700" variant="light" onPress={onClose} type="button">
                                     بازگشت

@@ -20,7 +20,7 @@ export const Sidebar: FC = (): ReactElement => {
     const currentPath: string = useMemo(() => pathName.split('/')[2], [pathName]);
     const router = useRouter();
     const { removeLocalStorageItem } = useLocalStorage();
-    const { setLogin } = useAuth();
+    const { setLogin, user } = useAuth();
 
     const onLogout = () => {
         removeLocalStorageItem('token');
@@ -28,13 +28,15 @@ export const Sidebar: FC = (): ReactElement => {
         router.replace('/signin');
     };
 
+    console.log('user:', user);
+
     return (
         <aside className="w-full h-screen" dir="rtl">
             <div className="h-full px-3 py-4 overflow-y-auto bg-white shadow-sm text-gray-800">
                 <div className="mb-5 pr-2 flex items-center gap-x-1">
                     <Avatar src="/jpeg/other/avatar.jpg" size="md" />
                     <div className="flex flex-col space-y-2">
-                        <span className="text-[14px] font-semibold whitespace-nowrap">جواد شهرآبادی</span>
+                        <span className="text-[14px] font-semibold whitespace-nowrap">{user?.fullName}</span>
                     </div>
                 </div>
                 <ul className="space-y-2 font-medium">

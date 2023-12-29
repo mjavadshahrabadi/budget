@@ -1,9 +1,11 @@
 export interface ITransactionRow {
-    transactionId: string;
+    id: string;
     type: string;
-    creditCartNumber: string;
+    cartId: string;
     date: string;
     amount: number;
     description: string;
     actions: boolean;
+    createdAt: string;
+    updatedAt: string;
 }

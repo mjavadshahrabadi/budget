@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, Fragment, ReactElement, useEffect } from 'react';
 import { Button, Input, AutocompleteItem, Autocomplete, useDisclosure } from '@nextui-org/react';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';

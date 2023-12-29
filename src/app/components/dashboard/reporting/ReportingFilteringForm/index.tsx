@@ -1,92 +1,98 @@
-import { FC, ReactElement } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+'use client';
+
+import { FC, ReactElement, useEffect, useState } from 'react';
+
 import { Autocomplete, AutocompleteItem, Button, Input } from '@nextui-org/react';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import API from '@/src/app/utils/API';
+import { ICartRow } from '@/src/app/components/dashboard/cart/types';
+import toast from 'react-hot-toast';
+import { ITransactionRow } from '@/src/app/components/dashboard/transaction/types';
+import { TransactionTable } from '@/src/app/components/dashboard/transaction/TransactionTable';
 
 interface IFormValues {
     lt?: string | null;
     gt?: string | null;
-    date?: string | null;
-    creditCartNumber?: string | null;
+    creditCardNumber?: string | null;
     transactionType?: string | null;
 }
 
 export const ReportingFilteringForm: FC = (): ReactElement => {
-    const searchParam = useSearchParams();
-    const { register, getValues } = useForm<IFormValues>();
-    const router = useRouter();
+    const { register, handleSubmit } = useForm<IFormValues>({
+        defaultValues: {
+            creditCardNumber: '',
+            gt: '',
+            lt: '',
+            transactionType: '',
+        },
+    });
+    const [carts, setCarts] = useState<ICartRow[]>([]);
+    const [transaction, setTransaction] = useState<ITransactionRow[]>([]);
+    const [filteredTransaction, setFilteredTransaction] = useState<ITransactionRow[]>([]);
 
-    const getDateValue = (type: string): string => {
-        switch (type) {
-            case 'روز':
-                return '0';
-            case 'هفته':
-                return '1';
-            case 'ماه':
-                return '2';
-            case 'سال':
-                return '3';
-            default:
-                return '';
+    const getAllTransactions = async () => {
+        try {
+            const response = await API.get('account/transaction/all');
+            const result = response.data;
+            if (result.success && result.data) {
+                const normalizeData = result.data.map((cart: ICartRow) => ({ ...cart, action: true }));
+                setTransaction(normalizeData);
+                setFilteredTransaction(normalizeData);
+            }
+        } catch (error) {
+            toast.error('مشکلی در بارگذاری تراکنش ها رخ داده است');
         }
     };
-
-    const getTransactionType = (type: string): string => {
-        switch (type) {
-            case 'ورودی':
-                return '0';
-            case 'خروجی':
-                return '1';
-            default:
-                return '';
+    const getAllCarts = async () => {
+        try {
+            const response = await API.get('account/cart/get-all-carts');
+            const result = response.data;
+            if (result.success && result.data) {
+                const normalizeData = result.data.map((cart: ICartRow) => ({ ...cart, action: true }));
+                setCarts(normalizeData);
+            }
+        } catch (error) {
+            toast.error('مشکلی در بارگذاری کارت های بانکی رخ داده است');
         }
     };
+    useEffect(() => {
+        getAllTransactions();
+        getAllCarts();
+    }, []);
 
-    const onFilterHandler = () => {
-        const formValues = getValues();
-        const params = new URLSearchParams(searchParam);
+    const onFilterHandler: SubmitHandler<IFormValues> = (data) => {
+        if (data.lt === '' && data.gt === '' && data.creditCardNumber === '' && data.transactionType === '') {
+            getAllTransactions();
+        }
 
-        for (const [key, value] of Object.entries(formValues)) {
-            switch (key) {
-                case 'lt':
-                    params.set(key, value ? value : '');
-                    break;
-                case 'gt':
-                    params.set(key, value ? value : '');
-                    break;
-                case 'date':
-                    params.set(key, value ? getDateValue(value) : '');
-                    break;
-                case 'creditCartNumber':
-                    params.set(key, value ? value : '');
-                    break;
-                case 'transactionType':
-                    params.set(key, value ? getTransactionType(value) : '');
-                    break;
-                default:
-                    return;
+        let filteredTransaction = transaction;
+        if (data.lt) {
+            const value = +data.lt;
+            filteredTransaction = filteredTransaction.filter((item) => item.amount <= value);
+        }
+        if (data.gt) {
+            const value = +data.gt;
+            filteredTransaction = filteredTransaction.filter((item) => item.amount >= value);
+        }
+
+        if (data.transactionType) {
+            if (data.transactionType === 'ورودی') {
+                filteredTransaction = filteredTransaction.filter((item) => +item.type === 0);
+            } else {
+                filteredTransaction = filteredTransaction.filter((item) => +item.type === 1);
             }
         }
 
-        router.push(`?${params.toString()}`);
+        if (data.creditCardNumber) {
+            const findCartById = carts.find((cart) => cart.creditCardNumber === data.creditCardNumber)!;
+            filteredTransaction = filteredTransaction.filter((item) => +item.cartId === +findCartById?.id);
+        }
+        setFilteredTransaction(filteredTransaction);
     };
 
     return (
-        <div className="bg-white m-5 p-5 rounded-md">
-            <div className="grid grid-cols-4 gap-5" dir="rtl">
-                <Autocomplete
-                    id="date"
-                    label="فیلتر بر اساس تاریخ"
-                    defaultItems={[
-                        { label: 'روز', value: 'روز' },
-                        { label: 'هفته', value: 'هفته' },
-                        { label: 'ماه', value: 'ماه' },
-                        { label: 'سال', value: 'سال' },
-                    ]}
-                    {...register('date')}
-                >
-                    {(animal) => <AutocompleteItem key={animal.value}>{animal.label}</AutocompleteItem>}
-                </Autocomplete>
+        <form className="bg-white m-5 p-5 rounded-md" onSubmit={handleSubmit(onFilterHandler)}>
+            <div className="grid grid-cols-4 gap-5 mb-5" dir="rtl">
                 <Autocomplete
                     id="type"
                     label="فیلتر بر اساس نوع تراکنش"
@@ -100,22 +106,21 @@ export const ReportingFilteringForm: FC = (): ReactElement => {
                 </Autocomplete>
                 <Autocomplete
                     id="creditCardNumber"
-                    label="فیلتر بر اساس نوع کارت بانکی"
-                    defaultItems={[
-                        { label: ' 6037697374333710', value: '6037697374333710' },
-                        { label: '6280231353459380', value: '6280231353459380' },
-                    ]}
-                    {...register('creditCartNumber')}
+                    label="فیلتر بر اساس کارت بانکی"
+                    defaultItems={carts.map((cart) => ({ label: cart.creditCardNumber, value: cart.creditCardNumber }))}
+                    {...register('creditCardNumber')}
                 >
                     {(animal) => <AutocompleteItem key={animal.value}>{animal.label}</AutocompleteItem>}
                 </Autocomplete>
 
                 <Input type="number" label="مبالغ کمتر از" {...register('lt')} />
                 <Input type="number" label="مبالغ بیشتر از" {...register('gt')} />
-                <Button type="button" className="w-1/2 bg-indigo-500 text-white self-center" onPress={onFilterHandler}>
-                    فیلتر
+                <Button type="submit" className="w-1/2 bg-indigo-500 text-white self-center">
+                    اعمال فیلتر
                 </Button>
             </div>
-        </div>
+
+            <TransactionTable transactions={filteredTransaction} carts={carts} getAllTransaction={getAllTransactions} />
+        </form>
     );
 };
