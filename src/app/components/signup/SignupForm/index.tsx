@@ -5,6 +5,12 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { FingerPrintIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import API from '@/src/app/utils/API';
+import { useLocalStorage } from '@/src/app/hook/useLocalStorage';
+import { IUser, useAuth } from '@/src/store';
+import toast from 'react-hot-toast';
+import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
 
 interface ISigninValues {
     fullName: string;
@@ -23,6 +29,9 @@ const schema = Yup.object().shape({
 });
 
 export const SignupForm: FC = (): ReactElement => {
+    const { setLocalStorage } = useLocalStorage();
+    const { setLogin } = useAuth();
+    const router = useRouter();
     const {
         handleSubmit,
         register,
@@ -38,8 +47,20 @@ export const SignupForm: FC = (): ReactElement => {
         mode: 'all',
     });
 
-    const onFormSubmitAction: SubmitHandler<ISigninValues> = (data) => {
-        console.log('data: ', data);
+    const onFormSubmitAction: SubmitHandler<ISigninValues> = async (data) => {
+        const { fullName, email, password, confirmPassword } = data;
+        try {
+            const response = await API.post('/auth/signup', { fullName, email, password, confirmPassword });
+            const result = response.data;
+            if (result.success && result.data) {
+                const userPayload: IUser = jwtDecode(result.data);
+                setLogin(userPayload);
+                setLocalStorage('token', result.data);
+                router.replace('/dashboard/profile');
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.error ?? 'مشکلی رخ داده است');
+        }
     };
 
     return (

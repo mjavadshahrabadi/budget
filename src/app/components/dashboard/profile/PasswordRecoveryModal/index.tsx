@@ -3,6 +3,8 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input
 import { useForm, SubmitHandler } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import API from '@/src/app/utils/API';
+import toast from 'react-hot-toast';
 
 interface IPasswordRecoveryProps {
     isOpen: boolean;
@@ -40,8 +42,23 @@ export const PasswordRecoveryModal: FC<IPasswordRecoveryProps> = (props): ReactE
         mode: 'all',
     });
 
-    const onFormSubmitHandler: SubmitHandler<IFormValues> = (data) => {
-        console.log('data:', data);
+    const onFormSubmitHandler: SubmitHandler<IFormValues> = async (data) => {
+        const { currentPassword, newPassword, confirmNewPassword } = data;
+        try {
+            const response = await API.put('account/profile/forgot-password', {
+                currentPassword,
+                newPassword,
+                confirmNewPassword,
+            });
+            const result = response.data;
+            if (result.success && result.data) {
+                onClose();
+                toast.success('رمز عبور با موفقیت تغییر یافت');
+            }
+        } catch (error) {
+            onClose();
+            toast.error(error?.response?.data?.error ?? 'مشکلی رخ داده است');
+        }
     };
 
     return (

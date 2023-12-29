@@ -1,11 +1,12 @@
-import { FC, Fragment, ReactElement } from 'react';
+import { FC, Fragment, ReactElement, useEffect } from 'react';
 import { Button, Input, AutocompleteItem, Autocomplete, useDisclosure } from '@nextui-org/react';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import { PasswordRecoveryModal } from '@/src/app/components/dashboard/profile/PasswordRecoveryModal';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import toast from 'react-hot-toast';
+import API from '@/src/app/utils/API';
 
 interface IFormValues {
     fullName: string;
@@ -16,6 +17,19 @@ interface IFormValues {
     job?: string;
     degreeOfEducation?: string;
 }
+
+const degreeOfEducation = [
+    { label: 'دیپلم', value: 'دیپلم', description: '' },
+    { label: 'کارشناسی', value: 'کارشناسی', description: '' },
+    { label: 'کارشناسی ارشد', value: 'کارشناسی ارشد', description: '' },
+    { label: 'دکتری', value: 'دکتری', description: '' },
+];
+
+const states = [
+    { label: 'تهران', value: 'تهران', description: '' },
+    { label: 'قزوین', value: 'قزوین', description: '' },
+    { label: 'رشت', value: 'رشت', description: '' },
+];
 
 const schema = Yup.object().shape({
     fullName: Yup.string().min(5).max(50).required(),
@@ -33,9 +47,13 @@ const schema = Yup.object().shape({
 
 export const ProfileForm: FC = (): ReactElement => {
     const { isOpen, onOpen, onClose } = useDisclosure();
+
     const {
         register,
         handleSubmit,
+        setValue,
+        watch,
+        control,
         formState: { errors },
     } = useForm<IFormValues>({
         resolver: yupResolver(schema),
@@ -51,12 +69,50 @@ export const ProfileForm: FC = (): ReactElement => {
         mode: 'all',
     });
 
-    const onSubmitFormHandler: SubmitHandler<IFormValues> = (data) => {
-        console.log('data:', data);
-        toast.success('فرم با موفقیت ارسال شد');
+    const formValue = useWatch({ control });
+    console.log('formValues:', formValue.state);
+
+    const onSubmitFormHandler: SubmitHandler<IFormValues> = async (data) => {
+        const { job, fullName, phoneNumber, degreeOfEducation, address, state } = data;
+        try {
+            const response = await API.put('/account/profile', {
+                job,
+                fullName,
+                phoneNumber,
+                degreeOfEducation,
+                address,
+                state,
+            });
+            const result = response.data;
+            if (result.success && result.data) {
+                toast.success('فرم با موفقیت ویرایش شد');
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message ?? 'مشکلی رخ داده است');
+        }
     };
 
-    console.log('error:', errors);
+    const getProfile = async () => {
+        try {
+            const response = await API.get('account/profile');
+            const result = response.data;
+            if (result.success && result.data) {
+                const user = result.data;
+                setValue('job', user.job ? user.job : '');
+                setValue('address', user.address ? user.address : '');
+                setValue('email', user.email ? user.email : '');
+                setValue('degreeOfEducation', user.degreeOfEducation ? user.degreeOfEducation : '');
+                setValue('fullName', user.fullName ? user.fullName : '');
+                setValue('phoneNumber', user.phoneNumber ? user.phoneNumber : '');
+                setValue('state', user.state ? user.state : '');
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+    useEffect(() => {
+        getProfile();
+    }, []);
 
     return (
         <Fragment>
@@ -79,7 +135,7 @@ export const ProfileForm: FC = (): ReactElement => {
                             type="email"
                             isRequired
                             isReadOnly
-                            value="test@test.com"
+                            value={formValue.email}
                             {...register('email')}
                         />
                     </div>
@@ -90,6 +146,7 @@ export const ProfileForm: FC = (): ReactElement => {
                             maxLength={50}
                             type="text"
                             isRequired
+                            value={formValue.fullName}
                             {...register('fullName')}
                             isInvalid={!!errors.fullName}
                         />
@@ -100,6 +157,7 @@ export const ProfileForm: FC = (): ReactElement => {
                             label="شماره تلفن"
                             maxLength={11}
                             type="text"
+                            value={formValue.phoneNumber}
                             {...register('phoneNumber')}
                             isInvalid={!!errors.phoneNumber}
                         />
@@ -109,23 +167,28 @@ export const ProfileForm: FC = (): ReactElement => {
                             id="address"
                             label="آدرس"
                             type="text"
+                            value={formValue.address}
                             {...register('address')}
                             isInvalid={!!errors.address}
                         />
                     </div>
                     <div>
-                        <Input id="job" label="شغل" type="text" {...register('job')} isInvalid={!!errors.job} />
+                        <Input
+                            id="job"
+                            label="شغل"
+                            type="text"
+                            {...register('job')}
+                            isInvalid={!!errors.job}
+                            value={formValue.job}
+                        />
                     </div>
                     <div>
                         <Autocomplete
                             id="state"
                             label="استان محل سکونت"
-                            defaultItems={[
-                                { label: 'تهران', value: 'tehran', description: '' },
-                                { label: 'قزوین', value: 'qazvin', description: '' },
-                                { label: 'رشت', value: 'gilan', description: '' },
-                            ]}
-                            {...register('state')}
+                            inputValue={formValue.state}
+                            defaultItems={states}
+                            onInputChange={(value) => setValue('state', value)}
                         >
                             {(animal) => <AutocompleteItem key={animal.value}>{animal.label}</AutocompleteItem>}
                         </Autocomplete>
@@ -134,13 +197,9 @@ export const ProfileForm: FC = (): ReactElement => {
                         <Autocomplete
                             id="degreeOfEducation"
                             label="مدرک تحصیلی"
-                            defaultItems={[
-                                { label: 'دیپلم', value: 'diplom', description: '' },
-                                { label: 'کارشناسی', value: 'karshenasi', description: '' },
-                                { label: 'کارشناسی ارشد', value: 'karshenasi-arshad', description: '' },
-                                { label: 'دکتری', value: 'doctora', description: '' },
-                            ]}
-                            {...register('degreeOfEducation')}
+                            inputValue={formValue.degreeOfEducation}
+                            defaultItems={degreeOfEducation}
+                            onInputChange={(value) => setValue('degreeOfEducation', value)}
                         >
                             {(animal) => <AutocompleteItem key={animal.value}>{animal.label}</AutocompleteItem>}
                         </Autocomplete>

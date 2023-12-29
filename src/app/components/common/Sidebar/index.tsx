@@ -11,10 +11,22 @@ import {
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Avatar } from '@nextui-org/react';
+import { useRouter } from 'next/navigation';
+import { useLocalStorage } from '@/src/app/hook/useLocalStorage';
+import { useAuth } from '@/src/store';
 
 export const Sidebar: FC = (): ReactElement => {
     const pathName = usePathname();
     const currentPath: string = useMemo(() => pathName.split('/')[2], [pathName]);
+    const router = useRouter();
+    const { removeLocalStorageItem } = useLocalStorage();
+    const { setLogin } = useAuth();
+
+    const onLogout = () => {
+        removeLocalStorageItem('token');
+        setLogin(null);
+        router.replace('/signin');
+    };
 
     return (
         <aside className="w-full h-screen" dir="rtl">
@@ -66,7 +78,7 @@ export const Sidebar: FC = (): ReactElement => {
                             <span className="text-[15px]">گزارش گیری</span>
                         </Link>
                     </li>{' '}
-                    <li className="sidebar_item">
+                    <li className="sidebar_item" onClick={onLogout}>
                         <ArrowRightStartOnRectangleIcon className="w-5 h-5" />
                         <span className="text-[15px]">خروج</span>
                     </li>
